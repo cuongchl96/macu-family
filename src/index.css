@@ -1,0 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MacuFam Wealth - Premium Fintech Design System */
+
+@layer base {
+  :root {
+    /* Light Mode - Clean & Professional */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 160 84% 39%;
+
+    --radius: 0.75rem;
+
+    /* Custom Wealth Colors */
+    --wealth-gold: 45 93% 47%;
+    --wealth-gold-foreground: 0 0% 100%;
+    --wealth-crypto: 271 81% 56%;
+    --wealth-crypto-foreground: 0 0% 100%;
+    --wealth-property: 199 89% 48%;
+    --wealth-property-foreground: 0 0% 100%;
+    --wealth-savings: 160 84% 39%;
+    --wealth-savings-foreground: 0 0% 100%;
+
+    /* Profit/Loss */
+    --profit: 160 84% 39%;
+    --loss: 0 72% 51%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(168 75% 45%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 47%), hsl(38 92% 50%));
+    --gradient-crypto: linear-gradient(135deg, hsl(271 81% 56%), hsl(280 85% 65%));
+    --gradient-property: linear-gradient(135deg, hsl(199 89% 48%), hsl(210 85% 55%));
+    --gradient-dark: linear-gradient(135deg, hsl(222 47% 11%), hsl(222 47% 18%));
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 160 84% 39%;
+
+    /* Chart Colors */
+    --chart-1: 160 84% 39%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 271 81% 56%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 0 72% 51%;
+  }
+
+  .dark {
+    /* Dark Mode - Bloomberg Terminal Inspired */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 160 84% 45%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 160 84% 45%;
+    --accent-foreground: 222 47% 6%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 160 84% 45%;
+    --success-foreground: 222 47% 6%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 6%;
+
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 160 84% 45%;
+
+    /* Custom Wealth Colors - Brighter for dark mode */
+    --wealth-gold: 45 93% 55%;
+    --wealth-gold-foreground: 222 47% 6%;
+    --wealth-crypto: 271 81% 65%;
+    --wealth-crypto-foreground: 222 47% 6%;
+    --wealth-property: 199 89% 55%;
+    --wealth-property-foreground: 222 47% 6%;
+    --wealth-savings: 160 84% 45%;
+    --wealth-savings-foreground: 222 47% 6%;
+
+    /* Profit/Loss */
+    --profit: 160 84% 50%;
+    --loss: 0 72% 55%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(160 84% 45%), hsl(168 75% 50%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 55%), hsl(38 92% 60%));
+    --gradient-crypto: linear-gradient(135deg, hsl(271 81% 65%), hsl(280 85% 70%));
+    --gradient-property: linear-gradient(135deg, hsl(199 89% 55%), hsl(210 85% 60%));
+    --gradient-dark: linear-gradient(135deg, hsl(222 47% 9%), hsl(222 47% 15%));
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 160 84% 45%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 18%;
+    --sidebar-ring: 160 84% 45%;
+
+    /* Chart Colors */
+    --chart-1: 160 84% 50%;
+    --chart-2: 45 93% 55%;
+    --chart-3: 271 81% 65%;
+    --chart-4: 199 89% 55%;
+    --chart-5: 0 72% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .wealth-card {
+    @apply rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-300;
+  }
+
+  .wealth-card:hover {
+    @apply shadow-md;
+  }
+
+  .wealth-stat {
+    @apply text-4xl font-bold tracking-tight;
+  }
+
+  .wealth-label {
+    @apply text-sm font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  .wealth-value {
+    @apply font-mono text-lg font-semibold;
+  }
+
+  .profit-text {
+    @apply text-[hsl(var(--profit))] font-semibold;
+  }
+
+  .loss-text {
+    @apply text-[hsl(var(--loss))] font-semibold;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-xl bg-card/80;
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.3);
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+
+  .number-scroll {
+    @apply tabular-nums;
+  }
+}

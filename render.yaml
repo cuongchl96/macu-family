@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: macufam-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Điền vào Render dashboard: PostgreSQL URL từ Neon
+      - key: SECRET_KEY
+        generateValue: true  # Render tự sinh ngẫu nhiên
+      - key: APP_PIN
+        sync: false          # Điền vào Render dashboard: mã PIN 8 số của gia đình
+      - key: ALLOWED_ORIGINS
+        sync: false          # Điền vào Render dashboard: URL Vercel (VD: https://macufam.vercel.app)
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "10080"       # 7 ngày
