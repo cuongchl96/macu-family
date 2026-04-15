@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 
 from app.core.config import settings
 
@@ -20,5 +20,5 @@ def verify_token(
 ) -> None:
     try:
         jwt.decode(credentials.credentials, settings.SECRET_KEY, algorithms=["HS256"])
-    except JWTError:
+    except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Token không hợp lệ hoặc đã hết hạn")
