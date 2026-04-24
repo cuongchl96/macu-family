@@ -48,6 +48,9 @@ class SavingsDeposit(Base):
     maturity_date = Column(Date, nullable=False)
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
     owner = Column(SAEnum(OwnerEnum), nullable=False)
+    goal_id = Column(String, ForeignKey("financial_goals.id", ondelete="SET NULL"), nullable=True)
+
+    goal = relationship("FinancialGoal", back_populates="savings_deposits")
 
 class CryptoDeposit(Base):
     __tablename__ = "crypto_deposits"
@@ -86,3 +89,49 @@ class CapitalContribution(Base):
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
     owner = Column(SAEnum(OwnerEnum), nullable=False)
 
+
+# --- Salary Planning Feature ---
+
+class GoalCategoryEnum(str, enum.Enum):
+    real_estate_payment = "real_estate_payment"
+    travel = "travel"
+    education = "education"
+    emergency = "emergency"
+    other = "other"
+
+class MonthlySalary(Base):
+    __tablename__ = "monthly_salaries"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    month = Column(String, nullable=False)  # YYYY-MM e.g. "2026-01"
+    amount = Column(Float, nullable=False)
+    note = Column(String, nullable=True)
+    currency = Column(SAEnum(CurrencyEnum), nullable=False)
+
+    allocations = relationship("SalaryAllocation", back_populates="salary", cascade="all, delete-orphan")
+
+class FinancialGoal(Base):
+    __tablename__ = "financial_goals"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    target_amount = Column(Float, nullable=False)
+    currency = Column(SAEnum(CurrencyEnum), nullable=False)
+    category = Column(SAEnum(GoalCategoryEnum), nullable=False)
+    due_date = Column(Date, nullable=True)
+    # Optional reference to real estate (display only, no auto side-effects)
+    property_id = Column(String, ForeignKey("real_estate_properties.id", ondelete="SET NULL"), nullable=True)
+    payment_id = Column(String, ForeignKey("real_estate_payments.id", ondelete="SET NULL"), nullable=True)
+    note = Column(String, nullable=True)
+
+    allocations = relationship("SalaryAllocation", back_populates="goal", cascade="all, delete-orphan")
+    savings_deposits = relationship("SavingsDeposit", back_populates="goal")
+
+class SalaryAllocation(Base):
+    __tablename__ = "salary_allocations"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    salary_id = Column(String, ForeignKey("monthly_salaries.id", ondelete="CASCADE"), nullable=False)
+    goal_id = Column(String, ForeignKey("financial_goals.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Float, nullable=False)
+    note = Column(String, nullable=True)
+
+    salary = relationship("MonthlySalary", back_populates="allocations")
+    goal = relationship("FinancialGoal", back_populates="allocations")

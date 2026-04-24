@@ -262,3 +262,115 @@ async def delete_capital_contribution(id: str, db: AsyncSession = Depends(get_db
         await db.commit()
     return {"ok": True}
 
+
+# --- Monthly Salaries ---
+@router.get("/monthly_salaries", response_model=List[schemas.MonthlySalary])
+async def get_monthly_salaries(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.MonthlySalary))
+    return result.scalars().all()
+
+@router.post("/monthly_salaries", response_model=schemas.MonthlySalary)
+async def create_monthly_salary(item: schemas.MonthlySalaryCreate, db: AsyncSession = Depends(get_db)):
+    db_item = models.MonthlySalary(**item.model_dump())
+    db.add(db_item)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.put("/monthly_salaries/{id}", response_model=schemas.MonthlySalary)
+async def update_monthly_salary(id: str, item: schemas.MonthlySalaryUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.MonthlySalary).where(models.MonthlySalary.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    update_data = item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_item, key, value)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.delete("/monthly_salaries/{id}")
+async def delete_monthly_salary(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.MonthlySalary).where(models.MonthlySalary.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}
+
+
+# --- Financial Goals ---
+@router.get("/financial_goals", response_model=List[schemas.FinancialGoal])
+async def get_financial_goals(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.FinancialGoal))
+    return result.scalars().all()
+
+@router.post("/financial_goals", response_model=schemas.FinancialGoal)
+async def create_financial_goal(item: schemas.FinancialGoalCreate, db: AsyncSession = Depends(get_db)):
+    db_item = models.FinancialGoal(**item.model_dump())
+    db.add(db_item)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.put("/financial_goals/{id}", response_model=schemas.FinancialGoal)
+async def update_financial_goal(id: str, item: schemas.FinancialGoalUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.FinancialGoal).where(models.FinancialGoal.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    update_data = item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_item, key, value)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.delete("/financial_goals/{id}")
+async def delete_financial_goal(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.FinancialGoal).where(models.FinancialGoal.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}
+
+
+# --- Salary Allocations ---
+@router.get("/salary_allocations", response_model=List[schemas.SalaryAllocation])
+async def get_salary_allocations(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.SalaryAllocation))
+    return result.scalars().all()
+
+@router.post("/salary_allocations", response_model=schemas.SalaryAllocation)
+async def create_salary_allocation(item: schemas.SalaryAllocationCreate, db: AsyncSession = Depends(get_db)):
+    db_item = models.SalaryAllocation(**item.model_dump())
+    db.add(db_item)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.put("/salary_allocations/{id}", response_model=schemas.SalaryAllocation)
+async def update_salary_allocation(id: str, item: schemas.SalaryAllocationUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.SalaryAllocation).where(models.SalaryAllocation.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    update_data = item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_item, key, value)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+
+
+@router.delete("/salary_allocations/{id}")
+async def delete_salary_allocation(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.SalaryAllocation).where(models.SalaryAllocation.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import type { ViewMode, Currency, Owner } from '@/types/wealth';
-import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution } from '@/types/wealth';
+import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution, MonthlySalary, FinancialGoal, SalaryAllocation } from '@/types/wealth';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,6 +55,19 @@ interface WealthContextType {
   updateCapitalContribution: (id: string, updates: Partial<CapitalContribution>) => void;
   deleteCapitalContribution: (id: string) => void;
   getTotalCapitalContribution: (owner?: 'wife' | 'husband' | 'joint') => number;
+  // Salary Planning
+  monthlySalaries: MonthlySalary[];
+  addMonthlySalary: (salary: Omit<MonthlySalary, 'id'>) => void;
+  updateMonthlySalary: (id: string, updates: Partial<MonthlySalary>) => void;
+  deleteMonthlySalary: (id: string) => void;
+  financialGoals: FinancialGoal[];
+  addFinancialGoal: (goal: Omit<FinancialGoal, 'id'>) => void;
+  updateFinancialGoal: (id: string, updates: Partial<FinancialGoal>) => void;
+  deleteFinancialGoal: (id: string) => void;
+  salaryAllocations: SalaryAllocation[];
+  addSalaryAllocation: (allocation: Omit<SalaryAllocation, 'id'>) => void;
+  updateSalaryAllocation: (id: string, updates: Partial<SalaryAllocation>) => void;
+  deleteSalaryAllocation: (id: string) => void;
 }
 
 const WealthContext = createContext<WealthContextType | undefined>(undefined);
@@ -93,6 +106,9 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [cryptoHoldings, setCryptoHoldings] = useState<CryptoHolding[]>([]);
   const [goldHoldings, setGoldHoldings] = useState<GoldHolding[]>([]);
   const [capitalContributions, setCapitalContributions] = useState<CapitalContribution[]>([]);
+  const [monthlySalaries, setMonthlySalaries] = useState<MonthlySalary[]>([]);
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
+  const [salaryAllocations, setSalaryAllocations] = useState<SalaryAllocation[]>([]);
 
   // API Helper
   const apiCall = async (endpoint: string, method: string = 'GET', body?: any) => {
@@ -151,6 +167,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           startDate: new Date(item.start_date),
           maturityDate: new Date(item.maturity_date),
           currency: item.currency as Currency,
+          goalId: item.goal_id ?? undefined,
         })));
       }
 
@@ -210,6 +227,46 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           note: item.note,
           currency: item.currency as Currency,
           owner: item.owner
+        })));
+      }
+
+      // Fetch Monthly Salaries
+      const salaryData = await apiCall('/monthly_salaries');
+      if (salaryData) {
+        setMonthlySalaries(salaryData.map((item: any) => ({
+          id: item.id,
+          month: item.month,
+          amount: item.amount,
+          note: item.note,
+          currency: item.currency as Currency,
+        })));
+      }
+
+      // Fetch Financial Goals
+      const goalsData = await apiCall('/financial_goals');
+      if (goalsData) {
+        setFinancialGoals(goalsData.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          targetAmount: item.target_amount,
+          currency: item.currency as Currency,
+          category: item.category,
+          dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          propertyId: item.property_id,
+          paymentId: item.payment_id,
+          note: item.note,
+        })));
+      }
+
+      // Fetch Salary Allocations
+      const allocData = await apiCall('/salary_allocations');
+      if (allocData) {
+        setSalaryAllocations(allocData.map((item: any) => ({
+          id: item.id,
+          salaryId: item.salary_id,
+          goalId: item.goal_id,
+          amount: item.amount,
+          note: item.note,
         })));
       }
     };
@@ -326,7 +383,9 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       interest_rate: deposit.interestRate,
       start_date: startDate.toISOString().split('T')[0],
       maturity_date: maturityDate.toISOString().split('T')[0],
-      currency: deposit.currency,});
+      currency: deposit.currency,
+      goal_id: deposit.goalId ?? null
+    });
   }, []);
 
   const updateSavingsDeposit = useCallback(async (id: string, updates: Partial<SavingsDeposit>) => {
@@ -348,6 +407,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (updates.startDate !== undefined) payload.start_date = new Date(updates.startDate).toISOString().split('T')[0];
     if (updates.maturityDate !== undefined) payload.maturity_date = new Date(updates.maturityDate).toISOString().split('T')[0];
     if (updates.currency !== undefined) payload.currency = updates.currency;
+    if (updates.goalId !== undefined) payload.goal_id = updates.goalId;
 
     if (Object.keys(payload).length > 0) {
       await apiCall(`/savings_deposits/${id}`, 'PUT', payload);
@@ -565,6 +625,100 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [capitalContributions]);
 
 
+  // --- Monthly Salaries ---
+  const addMonthlySalary = useCallback(async (salary: Omit<MonthlySalary, 'id'>) => {
+    const newId = crypto.randomUUID();
+    const newSalary: MonthlySalary = { ...salary, id: newId };
+    setMonthlySalaries(prev => [...prev, newSalary]);
+    await apiCall('/monthly_salaries', 'POST', {
+      id: newId,
+      month: salary.month,
+      amount: salary.amount,
+      note: salary.note,
+      currency: salary.currency,
+    });
+  }, []);
+
+  const updateMonthlySalary = useCallback(async (id: string, updates: Partial<MonthlySalary>) => {
+    setMonthlySalaries(prev => prev.map(s => s.id !== id ? s : { ...s, ...updates }));
+    const payload: any = {};
+    if (updates.month !== undefined) payload.month = updates.month;
+    if (updates.amount !== undefined) payload.amount = updates.amount;
+    if (updates.note !== undefined) payload.note = updates.note;
+    if (updates.currency !== undefined) payload.currency = updates.currency;
+    if (Object.keys(payload).length > 0) await apiCall(`/monthly_salaries/${id}`, 'PUT', payload);
+  }, []);
+
+  const deleteMonthlySalary = useCallback(async (id: string) => {
+    setMonthlySalaries(prev => prev.filter(s => s.id !== id));
+    await apiCall(`/monthly_salaries/${id}`, 'DELETE');
+  }, []);
+
+  // --- Financial Goals ---
+  const addFinancialGoal = useCallback(async (goal: Omit<FinancialGoal, 'id'>) => {
+    const newId = crypto.randomUUID();
+    const newGoal: FinancialGoal = { ...goal, id: newId };
+    setFinancialGoals(prev => [...prev, newGoal]);
+    await apiCall('/financial_goals', 'POST', {
+      id: newId,
+      name: goal.name,
+      target_amount: goal.targetAmount,
+      currency: goal.currency,
+      category: goal.category,
+      due_date: goal.dueDate ? new Date(goal.dueDate).toISOString().split('T')[0] : null,
+      property_id: goal.propertyId ?? null,
+      payment_id: goal.paymentId ?? null,
+      note: goal.note,
+    });
+  }, []);
+
+  const updateFinancialGoal = useCallback(async (id: string, updates: Partial<FinancialGoal>) => {
+    setFinancialGoals(prev => prev.map(g => g.id !== id ? g : { ...g, ...updates }));
+    const payload: any = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.targetAmount !== undefined) payload.target_amount = updates.targetAmount;
+    if (updates.currency !== undefined) payload.currency = updates.currency;
+    if (updates.category !== undefined) payload.category = updates.category;
+    if (updates.dueDate !== undefined) payload.due_date = updates.dueDate ? new Date(updates.dueDate).toISOString().split('T')[0] : null;
+    if (updates.propertyId !== undefined) payload.property_id = updates.propertyId;
+    if (updates.paymentId !== undefined) payload.payment_id = updates.paymentId;
+    if (updates.note !== undefined) payload.note = updates.note;
+    if (Object.keys(payload).length > 0) await apiCall(`/financial_goals/${id}`, 'PUT', payload);
+  }, []);
+
+  const deleteFinancialGoal = useCallback(async (id: string) => {
+    setFinancialGoals(prev => prev.filter(g => g.id !== id));
+    await apiCall(`/financial_goals/${id}`, 'DELETE');
+  }, []);
+
+  // --- Salary Allocations ---
+  const addSalaryAllocation = useCallback(async (allocation: Omit<SalaryAllocation, 'id'>) => {
+    const newId = crypto.randomUUID();
+    const newAllocation: SalaryAllocation = { ...allocation, id: newId };
+    setSalaryAllocations(prev => [...prev, newAllocation]);
+    await apiCall('/salary_allocations', 'POST', {
+      id: newId,
+      salary_id: allocation.salaryId,
+      goal_id: allocation.goalId,
+      amount: allocation.amount,
+      note: allocation.note,
+    });
+  }, []);
+
+  const updateSalaryAllocation = useCallback(async (id: string, updates: Partial<SalaryAllocation>) => {
+    setSalaryAllocations(prev => prev.map(a => a.id !== id ? a : { ...a, ...updates }));
+    const payload: any = {};
+    if (updates.amount !== undefined) payload.amount = updates.amount;
+    if (updates.note !== undefined) payload.note = updates.note;
+    if (Object.keys(payload).length > 0) await apiCall(`/salary_allocations/${id}`, 'PUT', payload);
+  }, []);
+
+  const deleteSalaryAllocation = useCallback(async (id: string) => {
+    setSalaryAllocations(prev => prev.filter(a => a.id !== id));
+    await apiCall(`/salary_allocations/${id}`, 'DELETE');
+  }, []);
+
+
   return (
     <WealthContext.Provider
       value={{
@@ -605,6 +759,18 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         updateCapitalContribution,
         deleteCapitalContribution,
         getTotalCapitalContribution,
+        monthlySalaries,
+        addMonthlySalary,
+        updateMonthlySalary,
+        deleteMonthlySalary,
+        financialGoals,
+        addFinancialGoal,
+        updateFinancialGoal,
+        deleteFinancialGoal,
+        salaryAllocations,
+        addSalaryAllocation,
+        updateSalaryAllocation,
+        deleteSalaryAllocation,
       }}
     >
       {children}

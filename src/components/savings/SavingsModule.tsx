@@ -23,7 +23,7 @@ import type { SavingsDeposit } from '@/types/wealth';
 import type { SavingsFormValues } from './SavingsFormDialog';
 
 export const SavingsModule = () => {
-  const { currency, savingsDeposits, addSavingsDeposit, updateSavingsDeposit, deleteSavingsDeposit, hideValues } = useWealth();
+  const { currency, savingsDeposits, financialGoals, addSavingsDeposit, updateSavingsDeposit, deleteSavingsDeposit, hideValues } = useWealth();
   const [formOpen, setFormOpen] = useState(false);
   const [editDeposit, setEditDeposit] = useState<SavingsDeposit | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -232,6 +232,7 @@ export const SavingsModule = () => {
                 const progressPercent = Math.min(100, Math.max(0, (progressDays / totalDays) * 100));
                 const isMaturing = daysToMaturity <= 30;
                 const isMatured = daysToMaturity <= 0;
+                const linkedGoal = deposit.goalId ? financialGoals.find(g => g.id === deposit.goalId) : null;
 
                 return (
                   <motion.div
@@ -263,6 +264,11 @@ export const SavingsModule = () => {
                           <div className="flex items-center gap-3">
                             <span className="font-semibold">{deposit.name ? deposit.name : deposit.bankName}</span>
                             {deposit.name && <span className="text-muted-foreground text-sm font-medium">({deposit.bankName})</span>}
+                            {linkedGoal && (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                🎯 {linkedGoal.name}
+                              </span>
+                            )}
                           </div>
                           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">

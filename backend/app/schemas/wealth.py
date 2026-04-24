@@ -62,6 +62,7 @@ class SavingsDepositBase(BaseModel):
     maturity_date: date
     currency: CurrencyEnum
     owner: Optional[OwnerEnum] = OwnerEnum.joint
+    goal_id: Optional[str] = None
 
 class SavingsDepositCreate(SavingsDepositBase):
     pass
@@ -75,6 +76,7 @@ class SavingsDepositUpdate(BaseModel):
     maturity_date: Optional[date] = None
     currency: Optional[CurrencyEnum] = None
     owner: Optional[OwnerEnum] = None
+    goal_id: Optional[str] = None
 
 class SavingsDeposit(SavingsDepositBase):
     class Config:
@@ -167,5 +169,84 @@ class CapitalContributionUpdate(BaseModel):
     owner: Optional[OwnerEnum] = None
 
 class CapitalContribution(CapitalContributionBase):
+    class Config:
+        from_attributes = True
+
+
+# --- Salary Planning Schemas ---
+
+class GoalCategoryEnum(str, Enum):
+    real_estate_payment = "real_estate_payment"
+    travel = "travel"
+    education = "education"
+    emergency = "emergency"
+    other = "other"
+
+# MonthlySalary
+class MonthlySalaryBase(BaseModel):
+    id: str
+    month: str  # YYYY-MM
+    amount: float
+    note: Optional[str] = None
+    currency: CurrencyEnum
+
+class MonthlySalaryCreate(MonthlySalaryBase):
+    pass
+
+class MonthlySalaryUpdate(BaseModel):
+    month: Optional[str] = None
+    amount: Optional[float] = None
+    note: Optional[str] = None
+    currency: Optional[CurrencyEnum] = None
+
+class MonthlySalary(MonthlySalaryBase):
+    class Config:
+        from_attributes = True
+
+# FinancialGoal
+class FinancialGoalBase(BaseModel):
+    id: str
+    name: str
+    target_amount: float
+    currency: CurrencyEnum
+    category: GoalCategoryEnum
+    due_date: Optional[date] = None
+    property_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    note: Optional[str] = None
+
+class FinancialGoalCreate(FinancialGoalBase):
+    pass
+
+class FinancialGoalUpdate(BaseModel):
+    name: Optional[str] = None
+    target_amount: Optional[float] = None
+    currency: Optional[CurrencyEnum] = None
+    category: Optional[GoalCategoryEnum] = None
+    due_date: Optional[date] = None
+    property_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    note: Optional[str] = None
+
+class FinancialGoal(FinancialGoalBase):
+    class Config:
+        from_attributes = True
+
+# SalaryAllocation
+class SalaryAllocationBase(BaseModel):
+    id: str
+    salary_id: str
+    goal_id: str
+    amount: float
+    note: Optional[str] = None
+
+class SalaryAllocationCreate(SalaryAllocationBase):
+    pass
+
+class SalaryAllocationUpdate(BaseModel):
+    amount: Optional[float] = None
+    note: Optional[str] = None
+
+class SalaryAllocation(SalaryAllocationBase):
     class Config:
         from_attributes = True

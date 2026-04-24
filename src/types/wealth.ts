@@ -13,6 +13,7 @@ export interface SavingsDeposit {
   startDate: Date;
   maturityDate: Date;
   currency: Currency;
+  goalId?: string;
 }
 
 export interface RealEstatePayment {
@@ -93,4 +94,55 @@ export interface User {
 export interface ExchangeRate {
   rate: number;
   lastUpdated: Date;
+}
+
+// --- Salary Planning Types ---
+
+export type GoalCategory = 'real_estate_payment' | 'travel' | 'education' | 'emergency' | 'other';
+
+export interface MonthlySalary {
+  id: string;
+  month: string; // "YYYY-MM" e.g. "2026-01"
+  amount: number;
+  note?: string;
+  currency: Currency;
+}
+
+export interface FinancialGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currency: Currency;
+  category: GoalCategory;
+  dueDate?: Date;
+  /** Tham chiếu BĐS — chỉ hiển thị, không auto-update trạng thái */
+  propertyId?: string;
+  paymentId?: string;
+  note?: string;
+}
+
+export interface SalaryAllocation {
+  id: string;
+  salaryId: string;
+  goalId: string;
+  amount: number;
+  note?: string;
+}
+
+/** Computed type — tính toán ở FE, không lưu DB */
+export interface GoalProgress {
+  goal: FinancialGoal;
+  /** Tổng các allocation (Kế hoạch) */
+  plannedAmount: number;
+  /** Tổng principal của các SavingsDeposit có goalId (Thực tế) */
+  savedAmount: number;
+  /** savedAmount / targetAmount * 100 */
+  progressPercent: number;
+  /** plannedAmount / targetAmount * 100 */
+  plannedPercent: number;
+  remainingAmount: number;
+  allocations: Array<SalaryAllocation & {
+    salary: MonthlySalary;
+  }>;
+  savingsDeposits: SavingsDeposit[];
 }

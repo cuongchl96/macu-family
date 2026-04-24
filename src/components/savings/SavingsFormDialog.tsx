@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useWealth } from '@/contexts/WealthContext';
 import type { SavingsDeposit, Currency } from '@/types/wealth';
 
 export type SavingsFormValues = {
@@ -35,6 +36,7 @@ export type SavingsFormValues = {
   startDate: string;
   maturityDate: string;
   currency: Currency;
+  goalId: string;
 };
 
 const defaultValues: SavingsFormValues = {
@@ -45,6 +47,7 @@ const defaultValues: SavingsFormValues = {
   startDate: new Date().toISOString().slice(0, 10),
   maturityDate: new Date().toISOString().slice(0, 10),
   currency: 'VND',
+  goalId: '__none__',
 };
 
 type SavingsFormDialogProps = {
@@ -63,6 +66,7 @@ export function SavingsFormDialog({
   const form = useForm<SavingsFormValues>({
     defaultValues,
   });
+  const { financialGoals } = useWealth();
 
   const isEdit = Boolean(editDeposit);
 
@@ -81,6 +85,7 @@ export function SavingsFormDialog({
             ? editDeposit.maturityDate.toISOString().slice(0, 10)
             : new Date(editDeposit.maturityDate).toISOString().slice(0, 10),
           currency: editDeposit.currency,
+          goalId: editDeposit.goalId || '__none__',
         });
       } else {
         form.reset(defaultValues);
@@ -222,6 +227,29 @@ export function SavingsFormDialog({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="goalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mục tiêu tài chính (Tùy chọn)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Không gắn mục tiêu nào" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Không gắn —</SelectItem>
+                        {financialGoals.map(g => (
+                          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <DialogFooter>
@@ -251,6 +279,7 @@ export function formValuesToDeposit(
     startDate: new Date(values.startDate),
     maturityDate: new Date(values.maturityDate),
     currency: values.currency,
+    goalId: values.goalId !== '__none__' ? values.goalId : undefined,
   };
   if (editDeposit?.id) {
     return { id: editDeposit.id, ...deposit };

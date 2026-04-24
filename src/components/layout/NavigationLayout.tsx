@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-
   Menu,
   X,
   Sun,
@@ -19,6 +18,7 @@ import {
   Wallet,
   Eye,
   EyeOff,
+  Target,
 } from 'lucide-react';
 import { useWealth } from '@/contexts/WealthContext';
 import { type Currency } from '@/types/wealth';
@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export type Page = 'dashboard' | 'highlights' | 'savings' | 'capital' | 'realestate' | 'investments-gold' | 'investments-stock' | 'investments-crypto';
+export type Page = 'dashboard' | 'highlights' | 'savings' | 'capital' | 'realestate' | 'investments-gold' | 'investments-stock' | 'investments-crypto' | 'salary-planning';
 
 interface NavigationLayoutProps {
   currentPage: Page;
@@ -61,6 +61,7 @@ const navItems: Array<{
     ],
   },
   { id: 'capital', label: 'Nguồn vốn', icon: Wallet },
+  { id: 'salary-planning', label: 'Kế hoạch Lương', icon: Target },
 ];
 
 export const NavigationLayout = ({
