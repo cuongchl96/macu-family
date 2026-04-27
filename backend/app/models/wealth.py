@@ -126,7 +126,7 @@ class FinancialGoal(Base):
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
     category = Column(SAEnum(GoalCategoryEnum), nullable=False)
     due_date = Column(Date, nullable=True)
-    source = Column(SAEnum(GoalSourceEnum), nullable=False, default=GoalSourceEnum.manual)
+    source = Column(SAEnum(GoalSourceEnum, native_enum=False), nullable=False, default=GoalSourceEnum.manual)
     # Optional reference to real estate (display only, no auto side-effects)
     property_id = Column(String, ForeignKey("real_estate_properties.id", ondelete="SET NULL"), nullable=True)
     payment_id = Column(String, ForeignKey("real_estate_payments.id", ondelete="SET NULL"), nullable=True)
@@ -157,7 +157,7 @@ class Fund(Base):
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
     category = Column(SAEnum(GoalCategoryEnum), nullable=False)
     deadline = Column(Date, nullable=False)
-    status = Column(SAEnum(FundStatusEnum), nullable=False, default=FundStatusEnum.accumulating)
+    status = Column(SAEnum(FundStatusEnum, native_enum=False), nullable=False, default=FundStatusEnum.accumulating)
     note = Column(String, nullable=True)
     goal_id = Column(String, ForeignKey("financial_goals.id", ondelete="SET NULL"), nullable=True)
 
