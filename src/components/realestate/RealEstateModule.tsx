@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Calendar, CheckCircle2, AlertTriangle, TrendingUp, Plus, Home, Pencil, Trash2 } from 'lucide-react';
+import { Building2, Calendar, CheckCircle2, AlertTriangle, TrendingUp, Plus, Home, Pencil, Trash2, Target } from 'lucide-react';
 import { formatVND, formatDateVN, getDaysToMaturity, vndToUsd, formatUSD } from '@/data/wealthData';
 import { useWealth } from '@/contexts/WealthContext';
 import { cn } from '@/lib/utils';
@@ -39,11 +39,13 @@ const PropertyCard = ({
   index,
   onEdit,
   onDelete,
+  onSyncGoals,
 }: {
   property: RealEstateProperty;
   index: number;
   onEdit: (p: RealEstateProperty) => void;
   onDelete: (p: RealEstateProperty) => void;
+  onSyncGoals: (p: RealEstateProperty) => void;
 }) => {
   const { currency, hideValues } = useWealth();
 
@@ -110,6 +112,18 @@ const PropertyCard = ({
                 title="Chỉnh sửa"
               >
                 <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-primary hover:text-primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSyncGoals(property);
+                }}
+                title="Đồng bộ mục tiêu"
+              >
+                <Target className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -259,6 +273,7 @@ export const RealEstateModule = () => {
     updateRealEstateProperty,
     deleteRealEstateProperty,
     hideValues,
+    syncPropertyGoals,
   } = useWealth();
   const [formOpen, setFormOpen] = useState(false);
   const [editProperty, setEditProperty] = useState<RealEstateProperty | null>(null);
@@ -440,6 +455,7 @@ export const RealEstateModule = () => {
                   setFormOpen(true);
                 }}
                 onDelete={(p) => setDeleteConfirmId(p.id)}
+                onSyncGoals={(p) => syncPropertyGoals(p.id)}
               />
             ))}
           </Accordion>

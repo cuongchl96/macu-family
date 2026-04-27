@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import type { ViewMode, Currency, Owner } from '@/types/wealth';
-import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution, MonthlySalary, FinancialGoal, SalaryAllocation } from '@/types/wealth';
+import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution, MonthlySalary, FinancialGoal, SalaryAllocation, Fund, FundExpense } from '@/types/wealth';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -68,6 +68,17 @@ interface WealthContextType {
   addSalaryAllocation: (allocation: Omit<SalaryAllocation, 'id'>) => void;
   updateSalaryAllocation: (id: string, updates: Partial<SalaryAllocation>) => void;
   deleteSalaryAllocation: (id: string) => void;
+  // Funds
+  funds: Fund[];
+  addFund: (fund: Omit<Fund, 'id' | 'status' | 'goalId'>) => void;
+  updateFund: (id: string, updates: Partial<Fund>) => void;
+  deleteFund: (id: string) => void;
+  toggleFundStatus: (id: string, status: Fund['status']) => void;
+  fundExpenses: FundExpense[];
+  addFundExpense: (expense: Omit<FundExpense, 'id'>) => void;
+  deleteFundExpense: (id: string) => void;
+  // BĐS Goal Sync
+  syncPropertyGoals: (propertyId: string) => void;
 }
 
 const WealthContext = createContext<WealthContextType | undefined>(undefined);
@@ -109,6 +120,8 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [monthlySalaries, setMonthlySalaries] = useState<MonthlySalary[]>([]);
   const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
   const [salaryAllocations, setSalaryAllocations] = useState<SalaryAllocation[]>([]);
+  const [funds, setFunds] = useState<Fund[]>([]);
+  const [fundExpenses, setFundExpenses] = useState<FundExpense[]>([]);
 
   // API Helper
   const apiCall = async (endpoint: string, method: string = 'GET', body?: any) => {
@@ -235,7 +248,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (salaryData) {
         setMonthlySalaries(salaryData.map((item: any) => ({
           id: item.id,
-          month: item.month,
+          name: item.name,
           amount: item.amount,
           note: item.note,
           currency: item.currency as Currency,
@@ -252,6 +265,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           currency: item.currency as Currency,
           category: item.category,
           dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          source: item.source || 'manual',
           propertyId: item.property_id,
           paymentId: item.payment_id,
           note: item.note,
@@ -266,6 +280,34 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           salaryId: item.salary_id,
           goalId: item.goal_id,
           amount: item.amount,
+          note: item.note,
+        })));
+      }
+
+      // Fetch Funds
+      const fundsData = await apiCall('/funds');
+      if (fundsData) {
+        setFunds(fundsData.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          targetAmount: item.target_amount,
+          currency: item.currency as Currency,
+          category: item.category,
+          deadline: new Date(item.deadline),
+          status: item.status,
+          note: item.note,
+          goalId: item.goal_id ?? undefined,
+        })));
+      }
+
+      // Fetch Fund Expenses
+      const expData = await apiCall('/fund_expenses');
+      if (expData) {
+        setFundExpenses(expData.map((item: any) => ({
+          id: item.id,
+          fundId: item.fund_id,
+          amount: item.amount,
+          date: new Date(item.date),
           note: item.note,
         })));
       }
@@ -632,7 +674,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setMonthlySalaries(prev => [...prev, newSalary]);
     await apiCall('/monthly_salaries', 'POST', {
       id: newId,
-      month: salary.month,
+      name: salary.name,
       amount: salary.amount,
       note: salary.note,
       currency: salary.currency,
@@ -642,7 +684,7 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const updateMonthlySalary = useCallback(async (id: string, updates: Partial<MonthlySalary>) => {
     setMonthlySalaries(prev => prev.map(s => s.id !== id ? s : { ...s, ...updates }));
     const payload: any = {};
-    if (updates.month !== undefined) payload.month = updates.month;
+    if (updates.name !== undefined) payload.name = updates.name;
     if (updates.amount !== undefined) payload.amount = updates.amount;
     if (updates.note !== undefined) payload.note = updates.note;
     if (updates.currency !== undefined) payload.currency = updates.currency;
@@ -719,6 +761,126 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
 
+  // --- Funds ---
+  const addFund = useCallback(async (fund: Omit<Fund, 'id' | 'status' | 'goalId'>) => {
+    const newId = crypto.randomUUID();
+    const result = await apiCall('/funds', 'POST', {
+      id: newId,
+      name: fund.name,
+      target_amount: fund.targetAmount,
+      currency: fund.currency,
+      category: fund.category,
+      deadline: new Date(fund.deadline).toISOString().split('T')[0],
+      note: fund.note,
+    });
+    if (result) {
+      const newFund: Fund = {
+        id: result.id,
+        name: result.name,
+        targetAmount: result.target_amount,
+        currency: result.currency as Currency,
+        category: result.category,
+        deadline: new Date(result.deadline),
+        status: result.status,
+        note: result.note,
+        goalId: result.goal_id ?? undefined,
+      };
+      setFunds(prev => [...prev, newFund]);
+      // Also add the auto-created goal to local state
+      const goalsData = await apiCall('/financial_goals');
+      if (goalsData) {
+        setFinancialGoals(goalsData.map((item: any) => ({
+          id: item.id, name: item.name, targetAmount: item.target_amount,
+          currency: item.currency as Currency, category: item.category,
+          dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          source: item.source || 'manual',
+          propertyId: item.property_id, paymentId: item.payment_id, note: item.note,
+        })));
+      }
+      toast.success('Tạo quỹ thành công');
+    }
+  }, []);
+
+  const updateFund = useCallback(async (id: string, updates: Partial<Fund>) => {
+    setFunds(prev => prev.map(f => f.id !== id ? f : { ...f, ...updates }));
+    const payload: any = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.targetAmount !== undefined) payload.target_amount = updates.targetAmount;
+    if (updates.currency !== undefined) payload.currency = updates.currency;
+    if (updates.category !== undefined) payload.category = updates.category;
+    if (updates.deadline !== undefined) payload.deadline = new Date(updates.deadline).toISOString().split('T')[0];
+    if (updates.note !== undefined) payload.note = updates.note;
+    if (Object.keys(payload).length > 0) {
+      await apiCall(`/funds/${id}`, 'PUT', payload);
+      // Refresh goals since auto-update may have occurred
+      const goalsData = await apiCall('/financial_goals');
+      if (goalsData) {
+        setFinancialGoals(goalsData.map((item: any) => ({
+          id: item.id, name: item.name, targetAmount: item.target_amount,
+          currency: item.currency as Currency, category: item.category,
+          dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          source: item.source || 'manual',
+          propertyId: item.property_id, paymentId: item.payment_id, note: item.note,
+        })));
+      }
+    }
+  }, []);
+
+  const deleteFund = useCallback(async (id: string) => {
+    const fund = funds.find(f => f.id === id);
+    setFunds(prev => prev.filter(f => f.id !== id));
+    setFundExpenses(prev => prev.filter(e => e.fundId !== id));
+    if (fund?.goalId) {
+      setFinancialGoals(prev => prev.filter(g => g.id !== fund.goalId));
+    }
+    await apiCall(`/funds/${id}`, 'DELETE');
+  }, [funds]);
+
+  const toggleFundStatus = useCallback(async (id: string, status: Fund['status']) => {
+    setFunds(prev => prev.map(f => f.id !== id ? f : { ...f, status }));
+    await apiCall(`/funds/${id}/status`, 'PATCH', { status });
+  }, []);
+
+  // --- Fund Expenses ---
+  const addFundExpense = useCallback(async (expense: Omit<FundExpense, 'id'>) => {
+    const newId = crypto.randomUUID();
+    const newExpense: FundExpense = { ...expense, id: newId };
+    setFundExpenses(prev => [...prev, newExpense]);
+    await apiCall('/fund_expenses', 'POST', {
+      id: newId,
+      fund_id: expense.fundId,
+      amount: expense.amount,
+      date: new Date(expense.date).toISOString().split('T')[0],
+      note: expense.note,
+    });
+  }, []);
+
+  const deleteFundExpense = useCallback(async (id: string) => {
+    setFundExpenses(prev => prev.filter(e => e.id !== id));
+    await apiCall(`/fund_expenses/${id}`, 'DELETE');
+  }, []);
+
+  // --- BĐS Goal Sync ---
+  const syncPropertyGoals = useCallback(async (propertyId: string) => {
+    const result = await apiCall(`/real_estate_properties/${propertyId}/sync_goals`, 'POST');
+    if (result && result.goals_created > 0) {
+      toast.success(`Đã tạo ${result.goals_created} mục tiêu từ BĐS`);
+      // Refresh goals
+      const goalsData = await apiCall('/financial_goals');
+      if (goalsData) {
+        setFinancialGoals(goalsData.map((item: any) => ({
+          id: item.id, name: item.name, targetAmount: item.target_amount,
+          currency: item.currency as Currency, category: item.category,
+          dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          source: item.source || 'manual',
+          propertyId: item.property_id, paymentId: item.payment_id, note: item.note,
+        })));
+      }
+    } else {
+      toast.info('Không có kỳ thanh toán mới cần đồng bộ');
+    }
+  }, []);
+
   return (
     <WealthContext.Provider
       value={{
@@ -771,6 +933,15 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         addSalaryAllocation,
         updateSalaryAllocation,
         deleteSalaryAllocation,
+        funds,
+        addFund,
+        updateFund,
+        deleteFund,
+        toggleFundStatus,
+        fundExpenses,
+        addFundExpense,
+        deleteFundExpense,
+        syncPropertyGoals,
       }}
     >
       {children}

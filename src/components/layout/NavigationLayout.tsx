@@ -19,6 +19,7 @@ import {
   Eye,
   EyeOff,
   Target,
+  Vault,
 } from 'lucide-react';
 import { useWealth } from '@/contexts/WealthContext';
 import { type Currency } from '@/types/wealth';
@@ -32,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-export type Page = 'dashboard' | 'highlights' | 'savings' | 'capital' | 'realestate' | 'investments-gold' | 'investments-stock' | 'investments-crypto' | 'salary-planning';
+export type Page = 'dashboard' | 'highlights' | 'savings' | 'capital' | 'realestate' | 'investments-gold' | 'investments-stock' | 'investments-crypto' | 'salary-planning' | 'funds';
 
 interface NavigationLayoutProps {
   currentPage: Page;
@@ -62,6 +63,7 @@ const navItems: Array<{
   },
   { id: 'capital', label: 'Nguồn vốn', icon: Wallet },
   { id: 'salary-planning', label: 'Kế hoạch Lương', icon: Target },
+  { id: 'funds', label: 'Quỹ', icon: Vault },
 ];
 
 export const NavigationLayout = ({

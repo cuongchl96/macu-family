@@ -99,10 +99,19 @@ class GoalCategoryEnum(str, enum.Enum):
     emergency = "emergency"
     other = "other"
 
+class GoalSourceEnum(str, enum.Enum):
+    manual = "manual"
+    real_estate = "real_estate"
+    fund = "fund"
+
+class FundStatusEnum(str, enum.Enum):
+    accumulating = "accumulating"
+    ready = "ready"
+
 class MonthlySalary(Base):
     __tablename__ = "monthly_salaries"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    month = Column(String, nullable=False)  # YYYY-MM e.g. "2026-01"
+    name = Column(String, nullable=False)  # Free-text e.g. "Lương tháng 4/2026", "Thưởng Q1"
     amount = Column(Float, nullable=False)
     note = Column(String, nullable=True)
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
@@ -117,6 +126,7 @@ class FinancialGoal(Base):
     currency = Column(SAEnum(CurrencyEnum), nullable=False)
     category = Column(SAEnum(GoalCategoryEnum), nullable=False)
     due_date = Column(Date, nullable=True)
+    source = Column(SAEnum(GoalSourceEnum), nullable=False, default=GoalSourceEnum.manual)
     # Optional reference to real estate (display only, no auto side-effects)
     property_id = Column(String, ForeignKey("real_estate_properties.id", ondelete="SET NULL"), nullable=True)
     payment_id = Column(String, ForeignKey("real_estate_payments.id", ondelete="SET NULL"), nullable=True)
@@ -135,3 +145,32 @@ class SalaryAllocation(Base):
 
     salary = relationship("MonthlySalary", back_populates="allocations")
     goal = relationship("FinancialGoal", back_populates="allocations")
+
+
+# --- Fund Management ---
+
+class Fund(Base):
+    __tablename__ = "funds"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    target_amount = Column(Float, nullable=False)
+    currency = Column(SAEnum(CurrencyEnum), nullable=False)
+    category = Column(SAEnum(GoalCategoryEnum), nullable=False)
+    deadline = Column(Date, nullable=False)
+    status = Column(SAEnum(FundStatusEnum), nullable=False, default=FundStatusEnum.accumulating)
+    note = Column(String, nullable=True)
+    goal_id = Column(String, ForeignKey("financial_goals.id", ondelete="SET NULL"), nullable=True)
+
+    goal = relationship("FinancialGoal")
+    expenses = relationship("FundExpense", back_populates="fund", cascade="all, delete-orphan")
+
+class FundExpense(Base):
+    __tablename__ = "fund_expenses"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    fund_id = Column(String, ForeignKey("funds.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Float, nullable=False)
+    date = Column(Date, nullable=False)
+    note = Column(String, nullable=True)
+
+    fund = relationship("Fund", back_populates="expenses")
+

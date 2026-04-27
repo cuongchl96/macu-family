@@ -182,10 +182,19 @@ class GoalCategoryEnum(str, Enum):
     emergency = "emergency"
     other = "other"
 
+class GoalSourceEnum(str, Enum):
+    manual = "manual"
+    real_estate = "real_estate"
+    fund = "fund"
+
+class FundStatusEnum(str, Enum):
+    accumulating = "accumulating"
+    ready = "ready"
+
 # MonthlySalary
 class MonthlySalaryBase(BaseModel):
     id: str
-    month: str  # YYYY-MM
+    name: str  # Free-text e.g. "Lương tháng 4/2026"
     amount: float
     note: Optional[str] = None
     currency: CurrencyEnum
@@ -194,7 +203,7 @@ class MonthlySalaryCreate(MonthlySalaryBase):
     pass
 
 class MonthlySalaryUpdate(BaseModel):
-    month: Optional[str] = None
+    name: Optional[str] = None
     amount: Optional[float] = None
     note: Optional[str] = None
     currency: Optional[CurrencyEnum] = None
@@ -211,6 +220,7 @@ class FinancialGoalBase(BaseModel):
     currency: CurrencyEnum
     category: GoalCategoryEnum
     due_date: Optional[date] = None
+    source: GoalSourceEnum = GoalSourceEnum.manual
     property_id: Optional[str] = None
     payment_id: Optional[str] = None
     note: Optional[str] = None
@@ -224,6 +234,7 @@ class FinancialGoalUpdate(BaseModel):
     currency: Optional[CurrencyEnum] = None
     category: Optional[GoalCategoryEnum] = None
     due_date: Optional[date] = None
+    source: Optional[GoalSourceEnum] = None
     property_id: Optional[str] = None
     payment_id: Optional[str] = None
     note: Optional[str] = None
@@ -250,3 +261,56 @@ class SalaryAllocationUpdate(BaseModel):
 class SalaryAllocation(SalaryAllocationBase):
     class Config:
         from_attributes = True
+
+# --- Fund Schemas ---
+
+class FundBase(BaseModel):
+    id: str
+    name: str
+    target_amount: float
+    currency: CurrencyEnum
+    category: GoalCategoryEnum
+    deadline: date
+    status: FundStatusEnum = FundStatusEnum.accumulating
+    note: Optional[str] = None
+    goal_id: Optional[str] = None
+
+class FundCreate(BaseModel):
+    id: str
+    name: str
+    target_amount: float
+    currency: CurrencyEnum
+    category: GoalCategoryEnum
+    deadline: date
+    note: Optional[str] = None
+
+class FundUpdate(BaseModel):
+    name: Optional[str] = None
+    target_amount: Optional[float] = None
+    currency: Optional[CurrencyEnum] = None
+    category: Optional[GoalCategoryEnum] = None
+    deadline: Optional[date] = None
+    note: Optional[str] = None
+
+class FundStatusUpdate(BaseModel):
+    status: FundStatusEnum
+
+class Fund(FundBase):
+    class Config:
+        from_attributes = True
+
+# FundExpense
+class FundExpenseBase(BaseModel):
+    id: str
+    fund_id: str
+    amount: float
+    date: date
+    note: Optional[str] = None
+
+class FundExpenseCreate(FundExpenseBase):
+    pass
+
+class FundExpense(FundExpenseBase):
+    class Config:
+        from_attributes = True
+

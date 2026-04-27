@@ -99,10 +99,12 @@ export interface ExchangeRate {
 // --- Salary Planning Types ---
 
 export type GoalCategory = 'real_estate_payment' | 'travel' | 'education' | 'emergency' | 'other';
+export type GoalSource = 'manual' | 'real_estate' | 'fund';
+export type FundStatus = 'accumulating' | 'ready';
 
 export interface MonthlySalary {
   id: string;
-  month: string; // "YYYY-MM" e.g. "2026-01"
+  name: string; // Free-text e.g. "Lương tháng 4/2026", "Tiền thưởng Q1"
   amount: number;
   note?: string;
   currency: Currency;
@@ -115,6 +117,7 @@ export interface FinancialGoal {
   currency: Currency;
   category: GoalCategory;
   dueDate?: Date;
+  source: GoalSource;
   /** Tham chiếu BĐS — chỉ hiển thị, không auto-update trạng thái */
   propertyId?: string;
   paymentId?: string;
@@ -146,3 +149,26 @@ export interface GoalProgress {
   }>;
   savingsDeposits: SavingsDeposit[];
 }
+
+// --- Fund Types ---
+
+export interface Fund {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currency: Currency;
+  category: GoalCategory;
+  deadline: Date;
+  status: FundStatus;
+  note?: string;
+  goalId?: string;
+}
+
+export interface FundExpense {
+  id: string;
+  fundId: string;
+  amount: number;
+  date: Date;
+  note?: string;
+}
+

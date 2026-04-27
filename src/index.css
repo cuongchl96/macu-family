@@ -246,4 +246,13 @@
   .number-scroll {
     @apply tabular-nums;
   }
+
+  .progress-planned {
+    animation: planned-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes planned-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
 }

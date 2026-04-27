@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PiggyBank, Calendar, Percent, Building, Clock, Plus, Pencil, Trash2 } from 'lucide-react';
+import { PiggyBank, Calendar, Percent, Building, Clock, Plus, Pencil, Trash2, ArrowDownToLine } from 'lucide-react';
 import { formatVND, formatDateVN, getDaysToMaturity, vndToUsd, formatUSD } from '@/data/wealthData';
 import { useWealth } from '@/contexts/WealthContext';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import { SavingsFormDialog, formValuesToDeposit } from './SavingsFormDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { SavingsDeposit } from '@/types/wealth';
 import type { SavingsFormValues } from './SavingsFormDialog';
+import { WithdrawDialog } from './WithdrawDialog';
 
 export const SavingsModule = () => {
   const { currency, savingsDeposits, financialGoals, addSavingsDeposit, updateSavingsDeposit, deleteSavingsDeposit, hideValues } = useWealth();
@@ -28,6 +29,7 @@ export const SavingsModule = () => {
   const [editDeposit, setEditDeposit] = useState<SavingsDeposit | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<'bank_group' | 'maturity_asc' | 'value_desc'>('maturity_asc');
+  const [withdrawDeposit, setWithdrawDeposit] = useState<SavingsDeposit | null>(null);
   const [selectedDepositIds, setSelectedDepositIds] = useState<string[]>([]);
 
   const formatValue = (value: number) => {
@@ -338,6 +340,15 @@ export const SavingsModule = () => {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 text-amber-500 hover:text-amber-600"
+                            onClick={() => setWithdrawDeposit(deposit)}
+                            title="Rút tiền"
+                          >
+                            <ArrowDownToLine className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             onClick={() => setDeleteConfirmId(deposit.id)}
                             title="Xóa"
@@ -369,6 +380,13 @@ export const SavingsModule = () => {
           <Button variant="ghost" size="sm" onClick={() => setSelectedDepositIds([])} className="hover:bg-muted ml-2 text-muted-foreground">Bỏ chọn</Button>
         </motion.div>
       )}
+
+      {/* Withdraw Dialog */}
+      <WithdrawDialog
+        open={!!withdrawDeposit}
+        onOpenChange={v => { if (!v) setWithdrawDeposit(null); }}
+        deposit={withdrawDeposit}
+      />
     </div>
   );
 };

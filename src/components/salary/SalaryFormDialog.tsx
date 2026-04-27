@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { MonthlySalary, Currency } from '@/types/wealth';
 
 interface FormValues {
-  month: string;
+  name: string;
   amount: string;
   currency: Currency;
   note: string;
@@ -23,7 +23,7 @@ interface Props {
 
 export const SalaryFormDialog = ({ open, onOpenChange, onSubmit, editSalary }: Props) => {
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { month: '', amount: '', currency: 'VND', note: '' },
+    defaultValues: { name: '', amount: '', currency: 'VND', note: '' },
   });
 
   const [displayAmount, setDisplayAmount] = useState('');
@@ -34,16 +34,14 @@ export const SalaryFormDialog = ({ open, onOpenChange, onSubmit, editSalary }: P
       if (editSalary) {
         setDisplayAmount(editSalary.amount.toLocaleString('vi-VN'));
         reset({
-          month: editSalary.month,
+          name: editSalary.name,
           amount: String(editSalary.amount),
           currency: editSalary.currency,
           note: editSalary.note ?? '',
         });
       } else {
-        const now = new Date();
-        const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setDisplayAmount('');
-        reset({ month: defaultMonth, amount: '', currency: 'VND', note: '' });
+        reset({ name: '', amount: '', currency: 'VND', note: '' });
       }
     }
   }, [open, editSalary, reset]);
@@ -56,7 +54,7 @@ export const SalaryFormDialog = ({ open, onOpenChange, onSubmit, editSalary }: P
 
   const onFormSubmit = (values: FormValues) => {
     onSubmit({
-      month: values.month,
+      name: values.name.trim(),
       amount: parseFloat(values.amount),
       currency: values.currency,
       note: values.note || undefined,
@@ -68,23 +66,23 @@ export const SalaryFormDialog = ({ open, onOpenChange, onSubmit, editSalary }: P
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[420px] top-[5%] translate-y-0 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editSalary ? 'Sửa khai báo lương' : 'Khai báo lương tháng'}</DialogTitle>
+          <DialogTitle>{editSalary ? 'Sửa nguồn vốn' : 'Thêm nguồn vốn'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="salary-month">Tháng</Label>
+            <Label htmlFor="salary-name">Tên nguồn vốn</Label>
             <Input
-              id="salary-month"
-              type="month"
-              {...register('month', { required: 'Vui lòng chọn tháng' })}
+              id="salary-name"
+              placeholder="VD: Lương tháng 4/2026, Tiền thưởng Q1, Bán xe cũ..."
+              {...register('name', { required: 'Vui lòng nhập tên nguồn vốn' })}
             />
-            {errors.month && <p className="text-xs text-destructive">{errors.month.message}</p>}
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="salary-amount">Số tiền lương</Label>
+              <Label htmlFor="salary-amount">Số tiền</Label>
               <Input
                 id="salary-amount"
                 type="text"
@@ -112,7 +110,7 @@ export const SalaryFormDialog = ({ open, onOpenChange, onSubmit, editSalary }: P
 
           <div className="space-y-2">
             <Label htmlFor="salary-note">Ghi chú (tùy chọn)</Label>
-            <Input id="salary-note" placeholder="VD: Lương tháng 1 + thưởng" {...register('note')} />
+            <Input id="salary-note" placeholder="VD: Đã trừ thuế TNCN" {...register('note')} />
           </div>
 
           <DialogFooter>

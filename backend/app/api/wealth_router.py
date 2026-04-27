@@ -374,3 +374,167 @@ async def delete_salary_allocation(id: str, db: AsyncSession = Depends(get_db)):
         await db.delete(db_item)
         await db.commit()
     return {"ok": True}
+
+
+# --- Funds ---
+@router.get("/funds", response_model=List[schemas.Fund])
+async def get_funds(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Fund))
+    return result.scalars().all()
+
+@router.post("/funds", response_model=schemas.Fund)
+async def create_fund(item: schemas.FundCreate, db: AsyncSession = Depends(get_db)):
+    """Create a Fund and auto-generate a linked FinancialGoal."""
+    import uuid
+    goal_id = str(uuid.uuid4())
+    # Auto-create linked FinancialGoal
+    goal = models.FinancialGoal(
+        id=goal_id,
+        name=item.name,
+        target_amount=item.target_amount,
+        currency=item.currency,
+        category=item.category,
+        due_date=item.deadline,
+        source=models.GoalSourceEnum.fund,
+        note=f"Tự động tạo từ Quỹ: {item.name}",
+    )
+    db.add(goal)
+    # Create Fund with link to goal
+    fund = models.Fund(
+        id=item.id,
+        name=item.name,
+        target_amount=item.target_amount,
+        currency=item.currency,
+        category=item.category,
+        deadline=item.deadline,
+        note=item.note,
+        goal_id=goal_id,
+    )
+    db.add(fund)
+    await db.commit()
+    await db.refresh(fund)
+    return fund
+
+@router.put("/funds/{id}", response_model=schemas.Fund)
+async def update_fund(id: str, item: schemas.FundUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Fund).where(models.Fund.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    update_data = item.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_item, key, value)
+    # Auto-update linked Goal
+    if db_item.goal_id:
+        goal_result = await db.execute(select(models.FinancialGoal).where(models.FinancialGoal.id == db_item.goal_id))
+        goal = goal_result.scalar_one_or_none()
+        if goal:
+            if "name" in update_data:
+                goal.name = update_data["name"]
+            if "target_amount" in update_data:
+                goal.target_amount = update_data["target_amount"]
+            if "currency" in update_data:
+                goal.currency = update_data["currency"]
+            if "category" in update_data:
+                goal.category = update_data["category"]
+            if "deadline" in update_data:
+                goal.due_date = update_data["deadline"]
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.patch("/funds/{id}/status", response_model=schemas.Fund)
+async def update_fund_status(id: str, body: schemas.FundStatusUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Fund).where(models.Fund.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Fund not found")
+    db_item.status = body.status
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.delete("/funds/{id}")
+async def delete_fund(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Fund).where(models.Fund.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        # Delete linked Goal (cascade will handle allocations/savings)
+        if db_item.goal_id:
+            goal_result = await db.execute(select(models.FinancialGoal).where(models.FinancialGoal.id == db_item.goal_id))
+            goal = goal_result.scalar_one_or_none()
+            if goal:
+                await db.delete(goal)
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}
+
+
+# --- Fund Expenses ---
+@router.get("/fund_expenses", response_model=List[schemas.FundExpense])
+async def get_fund_expenses(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.FundExpense))
+    return result.scalars().all()
+
+@router.post("/fund_expenses", response_model=schemas.FundExpense)
+async def create_fund_expense(item: schemas.FundExpenseCreate, db: AsyncSession = Depends(get_db)):
+    db_item = models.FundExpense(**item.model_dump())
+    db.add(db_item)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.delete("/fund_expenses/{id}")
+async def delete_fund_expense(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.FundExpense).where(models.FundExpense.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}
+
+
+# --- BĐS Auto-Sync Goals ---
+@router.post("/real_estate_properties/{id}/sync_goals")
+async def sync_property_goals(id: str, db: AsyncSession = Depends(get_db)):
+    """Auto-create FinancialGoals for unpaid payments of a property."""
+    import uuid
+    result = await db.execute(
+        select(models.RealEstateProperty)
+        .options(selectinload(models.RealEstateProperty.payments))
+        .where(models.RealEstateProperty.id == id)
+    )
+    prop = result.scalar_one_or_none()
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    created = 0
+    for payment in prop.payments:
+        if payment.is_paid:
+            continue
+        # Check if a goal already exists for this payment
+        existing = await db.execute(
+            select(models.FinancialGoal).where(
+                models.FinancialGoal.payment_id == payment.id,
+                models.FinancialGoal.source == models.GoalSourceEnum.real_estate,
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue
+        goal = models.FinancialGoal(
+            id=str(uuid.uuid4()),
+            name=f"Trả góp {prop.name} - {payment.due_date.strftime('%d/%m/%Y')}",
+            target_amount=payment.amount,
+            currency=payment.currency,
+            category=models.GoalCategoryEnum.real_estate_payment,
+            due_date=payment.due_date,
+            source=models.GoalSourceEnum.real_estate,
+            property_id=prop.id,
+            payment_id=payment.id,
+            note=payment.note,
+        )
+        db.add(goal)
+        created += 1
+    await db.commit()
+    return {"ok": True, "goals_created": created}
+

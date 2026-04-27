@@ -11,6 +11,7 @@ import { GoldModule } from '@/components/investments/GoldModule';
 import { StockModule } from '@/components/investments/StockModule';
 import { CryptoModule } from '@/components/investments/CryptoModule';
 import { SalaryPlanningModule } from '@/components/salary/SalaryPlanningModule';
+import { FundsModule } from '@/components/funds/FundsModule';
 import { Loader2 } from 'lucide-react';
 
 const WealthApp = () => {
@@ -36,6 +37,8 @@ const WealthApp = () => {
         return <CryptoModule />;
       case 'salary-planning':
         return <SalaryPlanningModule onNavigateToSavings={() => setCurrentPage('savings')} />;
+      case 'funds':
+        return <FundsModule />;
       default:
         return <ExecutiveDashboard />;
     }

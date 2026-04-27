@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Wallet, Building2, Coins, TrendingUp, DollarSign, PiggyBank } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { WealthPieChart } from './WealthPieChart';
+import { GoalsBarChart } from './GoalsBarChart';
 import { UpcomingPayments } from './UpcomingPayments';
 import { UpcomingSavings } from './UpcomingSavings';
 import { useWealth } from '@/contexts/WealthContext';
@@ -123,6 +124,7 @@ export const ExecutiveDashboard = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 gap-6">
         <WealthPieChart data={chartData} />
+        <GoalsBarChart />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <UpcomingPayments />
           <UpcomingSavings />

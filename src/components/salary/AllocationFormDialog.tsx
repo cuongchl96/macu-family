@@ -23,9 +23,6 @@ interface Props {
   defaultGoalId?: string;
 }
 
-const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
-                 'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const fmtMonth = (m: string) => { const [y,mo] = m.split('-'); return `${MONTHS[+mo-1]}/${y}`; };
 const FMT = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 
 export const AllocationFormDialog = ({ open, onOpenChange, onSubmit, defaultSalaryId, defaultGoalId }: Props) => {
@@ -93,10 +90,10 @@ export const AllocationFormDialog = ({ open, onOpenChange, onSubmit, defaultSala
               </SelectTrigger>
               <SelectContent>
                 {[...monthlySalaries]
-                  .sort((a, b) => b.month.localeCompare(a.month))
+                  .sort((a, b) => a.name.localeCompare(b.name))
                   .map(s => (
                     <SelectItem key={s.id} value={s.id}>
-                      {fmtMonth(s.month)} — {FMT(s.amount)}
+                      {s.name} — {FMT(s.amount)}
                     </SelectItem>
                   ))}
               </SelectContent>
