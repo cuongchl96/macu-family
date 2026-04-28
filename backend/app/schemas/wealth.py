@@ -314,3 +314,75 @@ class FundExpense(FundExpenseBase):
     class Config:
         from_attributes = True
 
+
+# --- Loan Schemas ---
+
+class LoanTypeEnum(str, Enum):
+    family = "family"
+    mortgage = "mortgage"
+    consumer = "consumer"
+
+class RepaymentTypeEnum(str, Enum):
+    bullet = "bullet"
+    installment = "installment"
+
+class LoanBase(BaseModel):
+    id: str
+    name: str
+    loan_type: LoanTypeEnum
+    creditor: str
+    principal_amount: float
+    outstanding_balance: float
+    interest_rate: float = 0
+    start_date: date
+    due_date: Optional[date] = None
+    currency: CurrencyEnum
+    repayment_type: RepaymentTypeEnum
+    monthly_payment: Optional[float] = None
+    property_id: Optional[str] = None
+    note: Optional[str] = None
+
+class LoanCreate(LoanBase):
+    pass
+
+class LoanUpdate(BaseModel):
+    name: Optional[str] = None
+    creditor: Optional[str] = None
+    outstanding_balance: Optional[float] = None
+    interest_rate: Optional[float] = None
+    due_date: Optional[date] = None
+    monthly_payment: Optional[float] = None
+    note: Optional[str] = None
+
+class Loan(LoanBase):
+    class Config:
+        from_attributes = True
+
+
+# --- Net Worth Snapshot Schemas ---
+
+class NetWorthSnapshotCreate(BaseModel):
+    total_assets: float
+    total_liabilities: float
+    net_worth: float
+    savings_total: float = 0
+    gold_total: float = 0
+    crypto_total: float = 0
+    real_estate_total: float = 0
+    loans_total: float = 0
+
+class NetWorthSnapshot(BaseModel):
+    id: str
+    snapshot_date: str
+    total_assets: float
+    total_liabilities: float
+    net_worth: float
+    savings_total: float
+    gold_total: float
+    crypto_total: float
+    real_estate_total: float
+    loans_total: float
+
+    class Config:
+        from_attributes = True
+

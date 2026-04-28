@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import type { ViewMode, Currency, Owner } from '@/types/wealth';
-import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution, MonthlySalary, FinancialGoal, SalaryAllocation, Fund, FundExpense } from '@/types/wealth';
+import type { Currency } from '@/types/wealth';
+import type { RealEstateProperty, SavingsDeposit, CryptoDeposit, CryptoHolding, GoldHolding, CapitalContribution, MonthlySalary, FinancialGoal, SalaryAllocation, Fund, FundExpense, Loan, NetWorthSnapshot } from '@/types/wealth';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -79,6 +79,15 @@ interface WealthContextType {
   deleteFundExpense: (id: string) => void;
   // BĐS Goal Sync
   syncPropertyGoals: (propertyId: string) => void;
+  // Loans / Liabilities
+  loans: Loan[];
+  addLoan: (loan: Omit<Loan, 'id'>) => void;
+  updateLoan: (id: string, updates: Partial<Loan>) => void;
+  deleteLoan: (id: string) => void;
+  getTotalLiabilities: () => number;
+  // Net Worth Snapshots
+  netWorthSnapshots: NetWorthSnapshot[];
+  recordSnapshot: (data: Omit<NetWorthSnapshot, 'id' | 'snapshotDate'>) => void;
 }
 
 const WealthContext = createContext<WealthContextType | undefined>(undefined);
@@ -122,6 +131,8 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [salaryAllocations, setSalaryAllocations] = useState<SalaryAllocation[]>([]);
   const [funds, setFunds] = useState<Fund[]>([]);
   const [fundExpenses, setFundExpenses] = useState<FundExpense[]>([]);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [netWorthSnapshots, setNetWorthSnapshots] = useState<NetWorthSnapshot[]>([]);
 
   // API Helper
   const apiCall = async (endpoint: string, method: string = 'GET', body?: any) => {
@@ -309,6 +320,44 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           amount: item.amount,
           date: new Date(item.date),
           note: item.note,
+        })));
+      }
+
+      // Fetch Loans
+      const loansData = await apiCall('/loans');
+      if (loansData) {
+        setLoans(loansData.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          loanType: item.loan_type,
+          creditor: item.creditor,
+          principalAmount: item.principal_amount,
+          outstandingBalance: item.outstanding_balance,
+          interestRate: item.interest_rate,
+          startDate: new Date(item.start_date),
+          dueDate: item.due_date ? new Date(item.due_date) : undefined,
+          currency: item.currency as Currency,
+          repaymentType: item.repayment_type,
+          monthlyPayment: item.monthly_payment ?? undefined,
+          propertyId: item.property_id ?? undefined,
+          note: item.note ?? undefined,
+        })));
+      }
+
+      // Fetch Net Worth Snapshots
+      const snapshotsData = await apiCall('/snapshots?months=12');
+      if (snapshotsData) {
+        setNetWorthSnapshots(snapshotsData.map((item: any) => ({
+          id: item.id,
+          snapshotDate: item.snapshot_date,
+          totalAssets: item.total_assets,
+          totalLiabilities: item.total_liabilities,
+          netWorth: item.net_worth,
+          savingsTotal: item.savings_total,
+          goldTotal: item.gold_total,
+          cryptoTotal: item.crypto_total,
+          realEstateTotal: item.real_estate_total,
+          loansTotal: item.loans_total,
         })));
       }
     };
@@ -860,6 +909,85 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     await apiCall(`/fund_expenses/${id}`, 'DELETE');
   }, []);
 
+  // --- Loans ---
+  const getTotalLiabilities = useCallback(() => {
+    return loans.reduce((sum, l) => sum + l.outstandingBalance, 0);
+  }, [loans]);
+
+  const addLoan = useCallback(async (loan: Omit<Loan, 'id'>) => {
+    const newId = crypto.randomUUID();
+    const newLoan: Loan = { ...loan, id: newId };
+    setLoans(prev => [...prev, newLoan]);
+    await apiCall('/loans', 'POST', {
+      id: newId,
+      name: loan.name,
+      loan_type: loan.loanType,
+      creditor: loan.creditor,
+      principal_amount: loan.principalAmount,
+      outstanding_balance: loan.outstandingBalance,
+      interest_rate: loan.interestRate,
+      start_date: loan.startDate instanceof Date ? loan.startDate.toISOString().split('T')[0] : loan.startDate,
+      due_date: loan.dueDate ? (loan.dueDate instanceof Date ? loan.dueDate.toISOString().split('T')[0] : loan.dueDate) : null,
+      currency: loan.currency,
+      repayment_type: loan.repaymentType,
+      monthly_payment: loan.monthlyPayment ?? null,
+      property_id: loan.propertyId ?? null,
+      note: loan.note ?? null,
+    });
+    toast.success('Thêm khoản vay thành công');
+  }, []);
+
+  const updateLoan = useCallback(async (id: string, updates: Partial<Loan>) => {
+    setLoans(prev => prev.map(l => l.id !== id ? l : { ...l, ...updates }));
+    const payload: any = {};
+    if (updates.name !== undefined) payload.name = updates.name;
+    if (updates.creditor !== undefined) payload.creditor = updates.creditor;
+    if (updates.outstandingBalance !== undefined) payload.outstanding_balance = updates.outstandingBalance;
+    if (updates.interestRate !== undefined) payload.interest_rate = updates.interestRate;
+    if (updates.dueDate !== undefined) payload.due_date = updates.dueDate instanceof Date ? updates.dueDate.toISOString().split('T')[0] : updates.dueDate;
+    if (updates.monthlyPayment !== undefined) payload.monthly_payment = updates.monthlyPayment;
+    if (updates.note !== undefined) payload.note = updates.note;
+    if (Object.keys(payload).length > 0) await apiCall(`/loans/${id}`, 'PUT', payload);
+  }, []);
+
+  const deleteLoan = useCallback(async (id: string) => {
+    setLoans(prev => prev.filter(l => l.id !== id));
+    await apiCall(`/loans/${id}`, 'DELETE');
+    toast.success('Đã xoá khoản vay');
+  }, []);
+
+  // --- Net Worth Snapshots ---
+  const recordSnapshot = useCallback(async (data: Omit<NetWorthSnapshot, 'id' | 'snapshotDate'>) => {
+    const result = await apiCall('/snapshots/record', 'POST', {
+      total_assets: data.totalAssets,
+      total_liabilities: data.totalLiabilities,
+      net_worth: data.netWorth,
+      savings_total: data.savingsTotal,
+      gold_total: data.goldTotal,
+      crypto_total: data.cryptoTotal,
+      real_estate_total: data.realEstateTotal,
+      loans_total: data.loansTotal,
+    });
+    if (result) {
+      const snapshot: NetWorthSnapshot = {
+        id: result.id,
+        snapshotDate: result.snapshot_date,
+        totalAssets: result.total_assets,
+        totalLiabilities: result.total_liabilities,
+        netWorth: result.net_worth,
+        savingsTotal: result.savings_total,
+        goldTotal: result.gold_total,
+        cryptoTotal: result.crypto_total,
+        realEstateTotal: result.real_estate_total,
+        loansTotal: result.loans_total,
+      };
+      setNetWorthSnapshots(prev => {
+        const filtered = prev.filter(s => s.snapshotDate !== snapshot.snapshotDate);
+        return [...filtered, snapshot].sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate));
+      });
+    }
+  }, []);
+
   // --- BĐS Goal Sync ---
   const syncPropertyGoals = useCallback(async (propertyId: string) => {
     const result = await apiCall(`/real_estate_properties/${propertyId}/sync_goals`, 'POST');
@@ -942,6 +1070,13 @@ export const WealthProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         addFundExpense,
         deleteFundExpense,
         syncPropertyGoals,
+        loans,
+        addLoan,
+        updateLoan,
+        deleteLoan,
+        getTotalLiabilities,
+        netWorthSnapshots,
+        recordSnapshot,
       }}
     >
       {children}

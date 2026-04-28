@@ -172,3 +172,40 @@ export interface FundExpense {
   note?: string;
 }
 
+// --- Loans / Liabilities ---
+
+export type LoanType = 'family' | 'mortgage' | 'consumer';
+export type RepaymentType = 'bullet' | 'installment';
+
+export interface Loan {
+  id: string;
+  name: string;
+  loanType: LoanType;
+  creditor: string;
+  principalAmount: number;
+  outstandingBalance: number;
+  interestRate: number;
+  startDate: Date;
+  dueDate?: Date;
+  currency: Currency;
+  repaymentType: RepaymentType;
+  monthlyPayment?: number;
+  propertyId?: string;
+  note?: string;
+}
+
+// --- Net Worth Snapshot ---
+
+export interface NetWorthSnapshot {
+  id: string;
+  snapshotDate: string; // YYYY-MM
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  savingsTotal: number;
+  goldTotal: number;
+  cryptoTotal: number;
+  realEstateTotal: number;
+  loansTotal: number;
+}
+

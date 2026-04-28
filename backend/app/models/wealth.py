@@ -174,3 +174,65 @@ class FundExpense(Base):
 
     fund = relationship("Fund", back_populates="expenses")
 
+
+# --- Loans / Liabilities ---
+
+class LoanTypeEnum(str, enum.Enum):
+    family = "family"
+    mortgage = "mortgage"
+    consumer = "consumer"
+
+class RepaymentTypeEnum(str, enum.Enum):
+    bullet = "bullet"
+    installment = "installment"
+
+class Loan(Base):
+    __tablename__ = "loans"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    loan_type = Column(SAEnum(LoanTypeEnum, native_enum=False), nullable=False)
+    creditor = Column(String, nullable=False)
+    principal_amount = Column(Float, nullable=False)
+    outstanding_balance = Column(Float, nullable=False)
+    interest_rate = Column(Float, nullable=False, default=0)
+    start_date = Column(Date, nullable=False)
+    due_date = Column(Date, nullable=True)
+    currency = Column(SAEnum(CurrencyEnum), nullable=False)
+    repayment_type = Column(SAEnum(RepaymentTypeEnum, native_enum=False), nullable=False)
+    monthly_payment = Column(Float, nullable=True)
+    property_id = Column(String, ForeignKey("real_estate_properties.id", ondelete="SET NULL"), nullable=True)
+    note = Column(String, nullable=True)
+    created_at = Column(Date, nullable=False, default=date.today)
+
+
+# --- Notification Settings ---
+
+class NotificationSettings(Base):
+    __tablename__ = "notification_settings"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    telegram_bot_token = Column(String, nullable=True)
+    telegram_chat_id = Column(String, nullable=True)
+    enabled = Column(Boolean, nullable=False, default=True)
+    notify_realestate = Column(Boolean, nullable=False, default=True)
+    notify_savings = Column(Boolean, nullable=False, default=True)
+    notify_goals = Column(Boolean, nullable=False, default=True)
+    notify_monthly = Column(Boolean, nullable=False, default=True)
+    days_before_alert = Column(Float, nullable=False, default=7)
+
+
+# --- Net Worth Snapshots ---
+
+class NetWorthSnapshot(Base):
+    __tablename__ = "net_worth_snapshots"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    snapshot_date = Column(String, nullable=False)  # YYYY-MM
+    total_assets = Column(Float, nullable=False)
+    total_liabilities = Column(Float, nullable=False)
+    net_worth = Column(Float, nullable=False)
+    savings_total = Column(Float, nullable=False, default=0)
+    gold_total = Column(Float, nullable=False, default=0)
+    crypto_total = Column(Float, nullable=False, default=0)
+    real_estate_total = Column(Float, nullable=False, default=0)
+    loans_total = Column(Float, nullable=False, default=0)
+    created_at = Column(Date, nullable=False, default=date.today)
+

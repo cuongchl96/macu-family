@@ -497,7 +497,7 @@ async def delete_fund_expense(id: str, db: AsyncSession = Depends(get_db)):
 # --- BĐS Auto-Sync Goals ---
 @router.post("/real_estate_properties/{id}/sync_goals")
 async def sync_property_goals(id: str, db: AsyncSession = Depends(get_db)):
-    """Auto-create FinancialGoals for unpaid payments of a property."""
+    """Auto-create FinancialGoals for unpaid payments of a property (idempotent)."""
     import uuid
     result = await db.execute(
         select(models.RealEstateProperty)
@@ -538,3 +538,76 @@ async def sync_property_goals(id: str, db: AsyncSession = Depends(get_db)):
     await db.commit()
     return {"ok": True, "goals_created": created}
 
+
+# --- Loans ---
+
+@router.get("/loans", response_model=List[schemas.Loan])
+async def get_loans(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Loan))
+    return result.scalars().all()
+
+@router.post("/loans", response_model=schemas.Loan)
+async def create_loan(item: schemas.LoanCreate, db: AsyncSession = Depends(get_db)):
+    db_item = models.Loan(**item.model_dump())
+    db.add(db_item)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.put("/loans/{id}", response_model=schemas.Loan)
+async def update_loan(id: str, item: schemas.LoanUpdate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Loan).where(models.Loan.id == id))
+    db_item = result.scalar_one_or_none()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    for key, value in item.model_dump(exclude_unset=True).items():
+        setattr(db_item, key, value)
+    await db.commit()
+    await db.refresh(db_item)
+    return db_item
+
+@router.delete("/loans/{id}")
+async def delete_loan(id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Loan).where(models.Loan.id == id))
+    db_item = result.scalar_one_or_none()
+    if db_item:
+        await db.delete(db_item)
+        await db.commit()
+    return {"ok": True}
+
+
+# --- Net Worth Snapshots ---
+
+@router.get("/snapshots", response_model=List[schemas.NetWorthSnapshot])
+async def get_snapshots(months: int = 12, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(models.NetWorthSnapshot)
+        .order_by(models.NetWorthSnapshot.snapshot_date.desc())
+        .limit(months)
+    )
+    items = result.scalars().all()
+    return list(reversed(items))
+
+@router.post("/snapshots/record", response_model=schemas.NetWorthSnapshot)
+async def record_snapshot(data: schemas.NetWorthSnapshotCreate, db: AsyncSession = Depends(get_db)):
+    from datetime import date as dt
+    snapshot_date = dt.today().strftime("%Y-%m")
+    result = await db.execute(
+        select(models.NetWorthSnapshot).where(models.NetWorthSnapshot.snapshot_date == snapshot_date)
+    )
+    existing = result.scalar_one_or_none()
+    if existing:
+        for key, value in data.model_dump().items():
+            setattr(existing, key, value)
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+    snapshot = models.NetWorthSnapshot(
+        id=str(__import__("uuid").uuid4()),
+        snapshot_date=snapshot_date,
+        **data.model_dump(),
+    )
+    db.add(snapshot)
+    await db.commit()
+    await db.refresh(snapshot)
+    return snapshot
