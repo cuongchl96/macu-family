@@ -24,6 +24,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { AIExportDialog } from '@/components/export/AIExportDialog';
 import { useWealth } from '@/contexts/WealthContext';
 import { type Currency } from '@/types/wealth';
 import { cn } from '@/lib/utils';
@@ -172,6 +173,7 @@ export const NavigationLayout = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [aiExportOpen, setAiExportOpen] = useState(false);
   const { currency, setCurrency, currentUser, hideValues, toggleHideValues } = useWealth();
 
   const toggleTheme = () => {
@@ -314,6 +316,13 @@ export const NavigationLayout = ({
               <Bell className="h-4 w-4 shrink-0 opacity-70" />
               Thông báo Telegram
             </button>
+            <button
+              onClick={() => setAiExportOpen(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Sparkles className="h-4 w-4 shrink-0 opacity-70" />
+              Hỏi AI phân bổ lương
+            </button>
           </div>
 
           {/* User */}
@@ -327,6 +336,7 @@ export const NavigationLayout = ({
       </aside>
 
       <NotificationSettings open={notifOpen} onClose={() => setNotifOpen(false)} />
+      <AIExportDialog open={aiExportOpen} onClose={() => setAiExportOpen(false)} />
 
       {/* Main Content */}
       <main className="lg:ml-[280px] pt-16 lg:pt-0 min-h-screen">
