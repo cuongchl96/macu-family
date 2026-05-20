@@ -204,9 +204,17 @@ async def update_real_estate(id: str, item: schemas.RealEstatePropertyUpdate, db
     for key, value in update_data.items():
         setattr(db_item, key, value)
         
-    # Handle nested payments: remove old, insert new. 
-    # Supabase code does a full replace of real estate payments.
+    # Handle nested payments: remove old, insert new.
     if item.real_estate_payments is not None:
+        # Delete FinancialGoals linked to payments being marked as paid
+        paid_ids = {pm.id for pm in item.real_estate_payments if pm.is_paid and pm.id}
+        if paid_ids:
+            goals_result = await db.execute(
+                select(models.FinancialGoal).where(models.FinancialGoal.payment_id.in_(paid_ids))
+            )
+            for goal in goals_result.scalars().all():
+                await db.delete(goal)
+
         await db.execute(models.RealEstatePayment.__table__.delete().where(models.RealEstatePayment.property_id == id))
         for pm in item.real_estate_payments:
             db_pm = models.RealEstatePayment(**pm.model_dump(), property_id=id)

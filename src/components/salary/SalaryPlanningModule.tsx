@@ -372,6 +372,8 @@ export const SalaryPlanningModule = ({ onNavigateToSavings }: { onNavigateToSavi
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditGoal(gp.goal); setGoalOpen(true); }}><Pencil className="h-4 w-4"/></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteFinancialGoal(gp.goal.id)}><Trash2 className="h-4 w-4"/></Button>
                         </>
+                      ) : gp.goal.source === 'real_estate' && !gp.goal.paymentId ? (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Xóa mục tiêu BĐS đã thanh toán" onClick={() => deleteFinancialGoal(gp.goal.id)}><Trash2 className="h-4 w-4"/></Button>
                       ) : (
                         <span className="text-xs text-muted-foreground italic px-2">Tự động</span>
                       )}
